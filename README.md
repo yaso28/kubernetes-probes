@@ -40,3 +40,8 @@ app-config
 
 - `chmod +x app-config/docker-build.sh`
 - `./app-config/docker-build.sh`
+
+app-target
+
+- `chmod +x app-target/docker-build.sh`
+- `./app-target/docker-build.sh`

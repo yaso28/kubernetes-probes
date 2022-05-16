@@ -3,10 +3,19 @@
 
 メニュー
 
+- [implemented probe api](#implemented-probe-api)
 - [enabled env file management](#enabled-env-file-management)
 - [added error handlers](#added-error-handlers)
 - [arranged project](#arranged-project)
 - [created project](#created-project)
+
+## implemented probe api
+
+- npm install axios
+- mkdir services
+- touch services/config-caller.js
+- touch routes/probe.js
+- edited app.js
 
 ## enabled env file management
 

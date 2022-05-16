@@ -1,0 +1,18 @@
+const axios = require('axios');
+
+const get = async (url) => {
+  await axios.get(url, {
+    baseURL: process.env.CONFIG_BASEURL || 'app-config',
+    params: {
+      podname: process.env.HOSTNAME
+    }
+  });
+};
+
+const caller = {
+  getProbeStart: () => get('/probe/start'), 
+  getProbeLive: () => get('/probe/live'), 
+  getProbeRead: () => get('/probe/read'), 
+};
+
+module.exports = caller;

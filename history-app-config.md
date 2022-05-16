@@ -3,11 +3,19 @@
 
 メニュー
 
+- [dockerized](#dockerized)
 - [implemented probe config api](#implemented-probe-config-api)
 - [enabled env file management](#enabled-env-file-management)
 - [added error handlers](#added-error-handlers)
 - [arranged project](#arranged-project)
 - [created project](#created-project)
+
+## dockerized
+
+- touch Dockerfile
+- touch .dockerignore
+- touch docker-build.sh
+- chmod +x docker-build.sh
 
 ## implemented probe config api
 

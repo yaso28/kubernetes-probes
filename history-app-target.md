@@ -3,8 +3,16 @@
 
 メニュー
 
+- [added error handlers](#added-error-handlers)
 - [arranged project](#arranged-project)
 - [created project](#created-project)
+
+## added error handlers
+
+- mkdir middlewares
+- touch middlewares/error-handler-404.js
+- touch middlewares/error-handler-500.js
+- edited app.js
 
 ## arranged project
 

@@ -3,9 +3,17 @@
 
 メニュー
 
+- [enabled env file management](#enabled-env-file-management)
 - [added error handlers](#added-error-handlers)
 - [arranged project](#arranged-project)
 - [created project](#created-project)
+
+## enabled env file management
+
+- npm install dotenv
+- touch .env
+- cp .env .env.example
+- edited bin/www
 
 ## added error handlers
 

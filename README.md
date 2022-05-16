@@ -12,3 +12,6 @@
 - [app-target](app-target/)
   - 検証対象のアプリケーション
   - [開発履歴](history-app-target.md)
+- [app-config](app-config/)
+  - 検証対象アプリケーションの設定を行うバックエンドアプリケーション
+  - [開発履歴](history-app-config.md)

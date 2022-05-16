@@ -3,10 +3,16 @@
 
 メニュー
 
+- [implemented probe config api](#implemented-probe-config-api)
 - [enabled env file management](#enabled-env-file-management)
 - [added error handlers](#added-error-handlers)
 - [arranged project](#arranged-project)
 - [created project](#created-project)
+
+## implemented probe config api
+
+- touch routes/probe.js
+- edited app.js
 
 ## enabled env file management
 

@@ -13,6 +13,8 @@ app.get('/', (req, res) => {
     })
 });
 
+app.use('/probe', require('./routes/probe.js'));
+
 app.use(require('./middlewares/error-handler-404.js'));
 app.use(require('./middlewares/error-handler-500.js'));
 

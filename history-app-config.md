@@ -3,7 +3,14 @@
 
 メニュー
 
+- [arranged project](#arranged-project)
 - [created project](#created-project)
+
+## arranged project
+
+- rm -r public
+- rm routes/*
+- edited app.js
 
 ## created project
 

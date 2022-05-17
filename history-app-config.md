@@ -1,7 +1,7 @@
 <!-- omit in toc -->
 # app-config 開発履歴
 
-メニュー
+※上の方が新しい履歴です。
 
 - [dockerized](#dockerized)
 - [implemented probe config api](#implemented-probe-config-api)

@@ -1,14 +1,21 @@
 <!-- omit in toc -->
 # app-target 開発履歴
 
-メニュー
+※上の方が新しい履歴です。
 
+- [implemented info api](#implemented-info-api)
 - [dockerized](#dockerized)
 - [implemented probe api](#implemented-probe-api)
 - [enabled env file management](#enabled-env-file-management)
 - [added error handlers](#added-error-handlers)
 - [arranged project](#arranged-project)
 - [created project](#created-project)
+
+## implemented info api
+
+- npm install node-os-utils
+- touch routes/info.js
+- edited app.js
 
 ## dockerized
 

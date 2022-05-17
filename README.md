@@ -106,11 +106,11 @@ kubectl apply -k kustomize/overlays/local-replicas
 
 `app-config`で使用する環境変数は下記の通りです。
 
-|環境変数名|設定内容|デフォルト|
-|---|---|---|
-|START_EXCLUDE|startupProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでstartupProbeが成功する）|
-|LIVE_EXCLUDE|livenessProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでlivenessProbeが成功する）|
-|READ_EXCLUDE|readinessProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでreadinessProbeが成功する）|
+|環境変数名|設定内容|デフォルト|備考|
+|---|---|---|---|
+|START_EXCLUDE|startupProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでstartupProbeが成功する）|値を`ALL`にした場合は、全てのPodでstartupProbeが失敗する｜
+|LIVE_EXCLUDE|livenessProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでlivenessProbeが成功する）|値を`ALL`にした場合は、全てのPodでlivenessProbeが失敗する｜
+|READ_EXCLUDE|readinessProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでreadinessProbeが成功する）|値を`ALL`にした場合は、全てのPodでreadinessProbeが失敗する｜
 
 これらの環境変数を書き換えることで、`app-target`の各Podに対してProbe（診断）の成功／失敗を制御できます。
 
@@ -124,4 +124,10 @@ kubectl set env -n probes deployment/app-config LIVE_EXCLUDE=app-target-5cc45585
 
 ```bash
 kubectl set env -n probes deployment/app-config READ_EXCLUDE=app-target-5cc45585cf-tbrtg,app-target-5cc45585cf-wprt5
+```
+
+> 例：全てのPodでstartupProbeを失敗させる場合
+
+```bash
+kubectl set env -n probes deployment/app-config START_EXCLUDE=ALL
 ```

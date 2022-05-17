@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 
 const isExcluded = (targetPodName, envExclude) => {
+  if (envExclude === 'ALL') {
+    return true;
+  }
+
   const excludedList = (envExclude || '').split(',');
   return excludedList.includes(targetPodName);
 }

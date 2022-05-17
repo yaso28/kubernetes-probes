@@ -3,12 +3,17 @@
 
 ※上の方が新しい履歴です。
 
+- [added exclude-all option](#added-exclude-all-option)
 - [dockerized](#dockerized)
 - [implemented probe config api](#implemented-probe-config-api)
 - [enabled env file management](#enabled-env-file-management)
 - [added error handlers](#added-error-handlers)
 - [arranged project](#arranged-project)
 - [created project](#created-project)
+
+## added exclude-all option
+
+- edited routes/probe.js
 
 ## dockerized
 

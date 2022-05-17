@@ -1,3 +1,3 @@
 #!/bin/bash
 cd `dirname $0`
-docker build -t kubernetes-probes-app-config .
+docker image build -t kubernetes-probes-app-config .

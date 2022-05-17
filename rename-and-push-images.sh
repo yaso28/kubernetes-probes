@@ -20,7 +20,7 @@ echo "renamed kubernetes-probes-app-target to $1/kubernetes-probes-app-target:$2
 
 # Kustomizeのremote-imagesにリネーム後のDockerイメージを反映
 cd kustomize/components/remote-image
-cp kustomization.yaml.org kustomization.yaml
+cp kustomization-org.yaml kustomization.yaml
 kustomize edit set image kubernetes-probes-app-config=$1/kubernetes-probes-app-config:$2
 kustomize edit set image kubernetes-probes-app-target=$1/kubernetes-probes-app-target:$2
 echo "updated kustomize/components/remote-image/kustomization.yaml"

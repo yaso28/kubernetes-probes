@@ -15,6 +15,7 @@
 - [Dockerイメージ作成手順](#dockerイメージ作成手順)
 - [Dockerイメージpush手順](#dockerイメージpush手順)
 - [Kubernetesデプロイ手順](#kubernetesデプロイ手順)
+- [動作検証手順](#動作検証手順)
 
 ## アプリケーション
 
@@ -98,3 +99,29 @@ kubectl apply -k kustomize/overlays/local-replicas
 |ディレクトリ|Dockerイメージ|アクセス|スケール|
 |---|---|---|---|
 |local-replicas|local|service NodePort|replicas|
+
+## 動作検証手順
+
+このアプリケーションは、`app-target`のProbe（診断）を`app-config`の環境変数で制御する仕組みになっています。
+
+`app-config`で使用する環境変数は下記の通りです。
+
+|環境変数名|設定内容|デフォルト|
+|---|---|---|
+|START_EXCLUDE|startupProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでstartupProbeが成功する）|
+|LIVE_EXCLUDE|livenessProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでlivenessProbeが成功する）|
+|READ_EXCLUDE|readinessProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでreadinessProbeが成功する）|
+
+これらの環境変数を書き換えることで、`app-target`の各Podに対してProbe（診断）の成功／失敗を制御できます。
+
+> 例：Pod `app-target-5cc45585cf-q2fjf` でlivenessProbeを失敗させる場合
+
+```bash
+kubectl set env -n probes deployment/app-config LIVE_EXCLUDE=app-target-5cc45585cf-q2fjf
+```
+
+> 例：Pod `app-target-5cc45585cf-tbrtg`, `app-target-5cc45585cf-wprt5` でreadinessProbeを失敗させる場合
+
+```bash
+kubectl set env -n probes deployment/app-config READ_EXCLUDE=app-target-5cc45585cf-tbrtg,app-target-5cc45585cf-wprt5
+```

@@ -108,9 +108,9 @@ kubectl apply -k kustomize/overlays/local-replicas
 
 |環境変数名|設定内容|デフォルト|備考|
 |---|---|---|---|
-|START_EXCLUDE|startupProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでstartupProbeが成功する）|値を`ALL`にした場合は、全てのPodでstartupProbeが失敗する｜
-|LIVE_EXCLUDE|livenessProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでlivenessProbeが成功する）|値を`ALL`にした場合は、全てのPodでlivenessProbeが失敗する｜
-|READ_EXCLUDE|readinessProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでreadinessProbeが成功する）|値を`ALL`にした場合は、全てのPodでreadinessProbeが失敗する｜
+|START_EXCLUDE|startupProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでstartupProbeが成功する）|値を`ALL`にした場合は、全てのPodでstartupProbeが失敗する|
+|LIVE_EXCLUDE|livenessProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでlivenessProbeが成功する）|値を`ALL`にした場合は、全てのPodでlivenessProbeが失敗する|
+|READ_EXCLUDE|readinessProbeを失敗させる`app-target`のPod名のリスト（カンマ区切り）|値なし（全てのPodでreadinessProbeが成功する）|値を`ALL`にした場合は、全てのPodでreadinessProbeが失敗する|
 
 これらの環境変数を書き換えることで、`app-target`の各Podに対してProbe（診断）の成功／失敗を制御できます。
 

@@ -88,17 +88,23 @@ chmod +x rename-and-push-images.sh
 
 overlaysの中から1つ選択してデプロイします。
 
-> 例：`local-replicas`をデプロイする場合
+> 例：`local-nodeport-replicas`をデプロイする場合
 
 ```bash
-kubectl apply -k kustomize/overlays/local-replicas
+kubectl apply -k kustomize/overlays/local-nodeport-replicas
 ```
 
 各overlaysの内容は下記の通りです。
 
-|ディレクトリ|Dockerイメージ|アクセス|スケール|
-|---|---|---|---|
-|local-replicas|local|service NodePort|replicas|
+|ディレクトリ|Dockerイメージ|アクセス|スケール|備考|
+|---|---|---|---|---|
+|local-nodeport-replicas|local|service NodePort|replicas||
+|local-ingress-replicas|local|ingress|replicas|*1|
+
+> *1: デプロイ前に下記の作業が必要です。
+
+- `ingress-org.yaml`を`ingress.yaml`にコピー
+- `ingress.yaml`を編集して`host`を書き換える
 
 ## 動作検証手順
 

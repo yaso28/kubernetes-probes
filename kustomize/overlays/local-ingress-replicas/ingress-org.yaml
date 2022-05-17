@@ -3,15 +3,14 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: probes
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2 # Pathを変換します。
 spec:
   ingressClassName: nginx
   rules:
-    - http:
+    - host: probes.local
+      http:
         paths:
-          - path: /probes(/|$)(.*)
-            pathType: Exact
+          - path: /
+            pathType: Prefix
             backend:
               service:
                 name: app-target

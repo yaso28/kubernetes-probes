@@ -4,5 +4,6 @@ namespace: probes
 resources:
 - ../../base
 components:
-- ../../components/nodeport
 - ../../components/replicas
+patches:
+- path: service.yaml

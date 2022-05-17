@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-config
+  labels:
+    app: app-config
+spec:
+  selector:
+    matchLabels:
+      app: app-config
+  template:
+    metadata:
+      labels:
+        app: app-config
+    spec:
+      containers:
+        - name: app-config
+          image: kubernetes-probes-app-config
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-target
+  labels:
+    app: app-target
+spec:
+  selector:
+    matchLabels:
+      app: app-target
+  template:
+    metadata:
+      labels:
+        app: app-target
+    spec:
+      containers:
+        - name: app-target
+          image: kubernetes-probes-app-target
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              protocol: TCP

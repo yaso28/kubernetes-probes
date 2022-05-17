@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+images:
+- name: kubernetes-probes-app-config
+  newName: yaso28/kubernetes-probes-app-config
+  newTag: "1.0"
+- name: kubernetes-probes-app-target
+  newName: yaso28/kubernetes-probes-app-target
+  newTag: "1.0"

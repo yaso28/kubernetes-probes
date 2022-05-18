@@ -100,6 +100,7 @@ kubectl apply -k kustomize/overlays/local-nodeport-replicas
 |---|---|---|---|---|
 |local-nodeport-replicas|local|service NodePort|replicas||
 |local-ingress-replicas|local|ingress|replicas|*1|
+|remote-ingress-replicas|remote|ingress|replicas|*1|
 
 > *1: デプロイ前に下記の作業が必要です。
 

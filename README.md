@@ -31,13 +31,18 @@
 デプロイ
 
 - [kustomize](kustomize/)
-  - デプロイ用マニフェストファイル群
+  - アプリケーションをデプロイするマニフェストファイル群
 
 デバッグ
 
 - [event-exporter](event-exporter/)
-  - Kubernetesのイベントログを取得するツール
+  - イベントログ取得ツール「[kubernetes-event-exporter](https://github.com/opsgenie/kubernetes-event-exporter)」をデプロイするマニフェストファイル群
   - [開発履歴](history-event-exporter.md)
+
+レポート
+
+- [reports](reports/)
+  - 検証結果まとめ
 
 ## フレームワーク・ミドルウェア
 

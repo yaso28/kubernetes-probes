@@ -3,7 +3,12 @@
 
 ※上の方が新しい履歴です。
 
+- [customized config](#customized-config)
 - [downloaded yaml files](#downloaded-yaml-files)
+
+## customized config
+
+- edited 01-config.yaml
 
 ## downloaded yaml files
 

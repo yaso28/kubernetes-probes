@@ -10,7 +10,11 @@ data:
     route:
       routes:
         - match:
-            - receiver: "dump"
+            - kind: "Pod"
+              namespace: "probes"
+              labels:
+                app: "app-target"
+              receiver: "dump"
     receivers:
       - name: "dump"
         stdout: {}

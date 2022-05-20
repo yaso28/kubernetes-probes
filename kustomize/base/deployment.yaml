@@ -55,20 +55,20 @@ spec:
             httpGet:
               path: /probe/start
               port: 3000
-            timeoutSeconds: 10
+            timeoutSeconds: 5
             failureThreshold: 3
-            periodSeconds: 10
+            periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /probe/live
               port: 3000
-            timeoutSeconds: 10
+            timeoutSeconds: 5
             failureThreshold: 3
-            periodSeconds: 10
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /probe/read
               port: 3000
-            timeoutSeconds: 10
+            timeoutSeconds: 5
             failureThreshold: 3
-            periodSeconds: 10
+            periodSeconds: 5

@@ -8,11 +8,12 @@
 - [ツールをデプロイ](#ツールをデプロイ)
 - [イベントログ取得](#イベントログ取得)
   - [例](#例)
+- [「kubernetes-event-exporter」の設定内容](#kubernetes-event-exporterの設定内容)
 - [イベントログのクリア](#イベントログのクリア)
 - [「kubernetes-event-exporter」を使う理由](#kubernetes-event-exporterを使う理由)
 - [課題](#課題)
-  - [出力項目が多すぎる](#出力項目が多すぎる)
-  - [イベントログ以外も出力されてしまう](#イベントログ以外も出力されてしまう)
+  - [イベントログ出力結果の不具合](#イベントログ出力結果の不具合)
+  - [無関係な標準出力が混在](#無関係な標準出力が混在)
 
 ## ツールをデプロイ
 
@@ -51,12 +52,20 @@ kubectl logs -n monitoring deployment/event-exporter > events.log
 
 ### 例
 
-試しに`app-target`のPod1つをlivenessProbeエラー状態にしてみます。
+試しに`app-target`のPod1つをLivenessProbeエラー状態にしてイベントログを取得します。
 
-> 例：`app-target-6664868868-b84vm`をエラー状態にする場合
+まずは検証前時点のイベントログを出力しておきます。
 
 ```bash
-kubectl set env -n probes deployment/app-config LIVE_EXCLUDE=app-target-6664868868-b84vm
+kubectl logs -n monitoring deployment/event-exporter > events-before.log
+```
+
+次にapp-target`のPod1つをLivenessProbeエラー状態にします。
+
+> 例：`app-target-68b8b88575-86gg8`をエラー状態にする場合
+
+```bash
+kubectl set env -n probes deployment/app-config LIVE_EXCLUDE=app-target-68b8b88575-86gg8
 ```
 
 しばらく待ったのち、イベントログをファイル出力します。
@@ -65,48 +74,94 @@ kubectl set env -n probes deployment/app-config LIVE_EXCLUDE=app-target-66648688
 kubectl logs -n monitoring deployment/event-exporter > events.log
 ```
 
-出力したファイルの各行がイベントのJsonデータになっています。
-
-|Jsonキー|データの内容|
-|---|---|
-|`reason`|イベント名|
-|`message`|イベント詳細|
-|`lastTimestamp`|イベント発生時刻|
-|`involvedObject.name`|イベントが発生したPod名|
+`events.log`と`events-before.log`の差分は、下記のようになります。
 
 > 出力結果の例
 
-```json:events.log
-I0519 19:35:06.330217       1 request.go:665] Waited for 1.067330933s due to client-side throttling, not priority and fairness, request: GET:https://10.96.0.1:443/apis/events.k8s.io/v1?timeout=32s
-I0519 19:35:16.530351       1 request.go:665] Waited for 1.19709066s due to client-side throttling, not priority and fairness, request: GET:https://10.96.0.1:443/apis/events.k8s.io/v1beta1?timeout=32s
-{"metadata":{"name":"app-target-6664868868-b84vm.16f098a83780846f","namespace":"probes","uid":"fae45848-90fc-4606-a1d5-dddd6c36dc0f","resourceVersion":"910964","creationTimestamp":"2022-05-19T19:35:11Z"},"reason":"Unhealthy","message":"Liveness probe failed: HTTP probe failed with statuscode: 500","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T19:35:11Z","lastTimestamp":"2022-05-19T19:35:11Z","count":1,"type":"Warning","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f098a83780846f","namespace":"probes","uid":"fae45848-90fc-4606-a1d5-dddd6c36dc0f","resourceVersion":"910979","creationTimestamp":"2022-05-19T19:35:11Z"},"reason":"Unhealthy","message":"Liveness probe failed: HTTP probe failed with statuscode: 500","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T19:35:11Z","lastTimestamp":"2022-05-19T19:35:21Z","count":2,"type":"Warning","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f098a83780846f","namespace":"probes","uid":"fae45848-90fc-4606-a1d5-dddd6c36dc0f","resourceVersion":"910994","creationTimestamp":"2022-05-19T19:35:11Z"},"reason":"Unhealthy","message":"Liveness probe failed: HTTP probe failed with statuscode: 500","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T19:35:11Z","lastTimestamp":"2022-05-19T19:35:31Z","count":3,"type":"Warning","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f098acddcb674f","namespace":"probes","uid":"9003f705-4086-449a-9617-fed9c2ffeb2d","resourceVersion":"910995","creationTimestamp":"2022-05-19T19:35:31Z"},"reason":"Killing","message":"Container app-target failed liveness probe, will be restarted","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T19:35:31Z","lastTimestamp":"2022-05-19T19:35:31Z","count":1,"type":"Normal","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f0968c359530c1","namespace":"probes","uid":"0bb9eb8e-5d44-461e-9fe2-454395cec5ca","resourceVersion":"911043","creationTimestamp":"2022-05-19T18:56:32Z"},"reason":"Pulled","message":"Container image \"kubernetes-probes-app-target\" already present on machine","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T18:56:32Z","lastTimestamp":"2022-05-19T19:36:01Z","count":2,"type":"Normal","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f0968c3856e9f6","namespace":"probes","uid":"10d43c5d-33c5-45d8-abb6-96dc077f782a","resourceVersion":"911044","creationTimestamp":"2022-05-19T18:56:32Z"},"reason":"Created","message":"Created container app-target","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T18:56:32Z","lastTimestamp":"2022-05-19T19:36:01Z","count":2,"type":"Normal","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f0968c413ad2b6","namespace":"probes","uid":"c0b66e12-0458-4ab4-9e45-b55677a6e4b7","resourceVersion":"911045","creationTimestamp":"2022-05-19T18:56:32Z"},"reason":"Started","message":"Started container app-target","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T18:56:32Z","lastTimestamp":"2022-05-19T19:36:01Z","count":2,"type":"Normal","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f098a83780846f","namespace":"probes","uid":"fae45848-90fc-4606-a1d5-dddd6c36dc0f","resourceVersion":"911084","creationTimestamp":"2022-05-19T19:35:11Z"},"reason":"Unhealthy","message":"Liveness probe failed: HTTP probe failed with statuscode: 500","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T19:35:11Z","lastTimestamp":"2022-05-19T19:36:21Z","count":4,"type":"Warning","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f098a83780846f","namespace":"probes","uid":"fae45848-90fc-4606-a1d5-dddd6c36dc0f","resourceVersion":"911099","creationTimestamp":"2022-05-19T19:35:11Z"},"reason":"Unhealthy","message":"Liveness probe failed: HTTP probe failed with statuscode: 500","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T19:35:11Z","lastTimestamp":"2022-05-19T19:36:31Z","count":5,"type":"Warning","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f098a83780846f","namespace":"probes","uid":"fae45848-90fc-4606-a1d5-dddd6c36dc0f","resourceVersion":"911114","creationTimestamp":"2022-05-19T19:35:11Z"},"reason":"Unhealthy","message":"Liveness probe failed: HTTP probe failed with statuscode: 500","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T19:35:11Z","lastTimestamp":"2022-05-19T19:36:41Z","count":6,"type":"Warning","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f098acddcb674f","namespace":"probes","uid":"9003f705-4086-449a-9617-fed9c2ffeb2d","resourceVersion":"911115","creationTimestamp":"2022-05-19T19:35:31Z"},"reason":"Killing","message":"Container app-target failed liveness probe, will be restarted","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T19:35:31Z","lastTimestamp":"2022-05-19T19:36:41Z","count":2,"type":"Normal","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f0968c359530c1","namespace":"probes","uid":"0bb9eb8e-5d44-461e-9fe2-454395cec5ca","resourceVersion":"911157","creationTimestamp":"2022-05-19T18:56:32Z"},"reason":"Pulled","message":"Container image \"kubernetes-probes-app-target\" already present on machine","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T18:56:32Z","lastTimestamp":"2022-05-19T19:37:11Z","count":3,"type":"Normal","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f0968c3856e9f6","namespace":"probes","uid":"10d43c5d-33c5-45d8-abb6-96dc077f782a","resourceVersion":"911158","creationTimestamp":"2022-05-19T18:56:32Z"},"reason":"Created","message":"Created container app-target","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T18:56:32Z","lastTimestamp":"2022-05-19T19:37:11Z","count":3,"type":"Normal","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f0968c413ad2b6","namespace":"probes","uid":"c0b66e12-0458-4ab4-9e45-b55677a6e4b7","resourceVersion":"911159","creationTimestamp":"2022-05-19T18:56:32Z"},"reason":"Started","message":"Started container app-target","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T18:56:32Z","lastTimestamp":"2022-05-19T19:37:11Z","count":3,"type":"Normal","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f098a83780846f","namespace":"probes","uid":"fae45848-90fc-4606-a1d5-dddd6c36dc0f","resourceVersion":"911199","creationTimestamp":"2022-05-19T19:35:11Z"},"reason":"Unhealthy","message":"Liveness probe failed: HTTP probe failed with statuscode: 500","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T19:35:11Z","lastTimestamp":"2022-05-19T19:37:31Z","count":7,"type":"Warning","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f098a83780846f","namespace":"probes","uid":"fae45848-90fc-4606-a1d5-dddd6c36dc0f","resourceVersion":"911213","creationTimestamp":"2022-05-19T19:35:11Z"},"reason":"Unhealthy","message":"Liveness probe failed: HTTP probe failed with statuscode: 500","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T19:35:11Z","lastTimestamp":"2022-05-19T19:37:41Z","count":8,"type":"Warning","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f098a83780846f","namespace":"probes","uid":"fae45848-90fc-4606-a1d5-dddd6c36dc0f","resourceVersion":"911228","creationTimestamp":"2022-05-19T19:35:11Z"},"reason":"Unhealthy","message":"Liveness probe failed: HTTP probe failed with statuscode: 500","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T19:35:11Z","lastTimestamp":"2022-05-19T19:37:51Z","count":9,"type":"Warning","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f098acddcb674f","namespace":"probes","uid":"9003f705-4086-449a-9617-fed9c2ffeb2d","resourceVersion":"911229","creationTimestamp":"2022-05-19T19:35:31Z"},"reason":"Killing","message":"Container app-target failed liveness probe, will be restarted","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T19:35:31Z","lastTimestamp":"2022-05-19T19:37:51Z","count":3,"type":"Normal","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f0968c359530c1","namespace":"probes","uid":"0bb9eb8e-5d44-461e-9fe2-454395cec5ca","resourceVersion":"911273","creationTimestamp":"2022-05-19T18:56:32Z"},"reason":"Pulled","message":"Container image \"kubernetes-probes-app-target\" already present on machine","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T18:56:32Z","lastTimestamp":"2022-05-19T19:38:21Z","count":4,"type":"Normal","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f0968c3856e9f6","namespace":"probes","uid":"10d43c5d-33c5-45d8-abb6-96dc077f782a","resourceVersion":"911274","creationTimestamp":"2022-05-19T18:56:32Z"},"reason":"Created","message":"Created container app-target","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T18:56:32Z","lastTimestamp":"2022-05-19T19:38:21Z","count":4,"type":"Normal","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f0968c413ad2b6","namespace":"probes","uid":"c0b66e12-0458-4ab4-9e45-b55677a6e4b7","resourceVersion":"911275","creationTimestamp":"2022-05-19T18:56:32Z"},"reason":"Started","message":"Started container app-target","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T18:56:32Z","lastTimestamp":"2022-05-19T19:38:21Z","count":4,"type":"Normal","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f098a83780846f","namespace":"probes","uid":"fae45848-90fc-4606-a1d5-dddd6c36dc0f","resourceVersion":"911312","creationTimestamp":"2022-05-19T19:35:11Z"},"reason":"Unhealthy","message":"Liveness probe failed: HTTP probe failed with statuscode: 500","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T19:35:11Z","lastTimestamp":"2022-05-19T19:38:41Z","count":10,"type":"Warning","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
-{"metadata":{"name":"app-target-6664868868-b84vm.16f098a83780846f","namespace":"probes","uid":"fae45848-90fc-4606-a1d5-dddd6c36dc0f","resourceVersion":"911326","creationTimestamp":"2022-05-19T19:35:11Z"},"reason":"Unhealthy","message":"Liveness probe failed: HTTP probe failed with statuscode: 500","source":{"component":"kubelet","host":"docker-desktop"},"firstTimestamp":"2022-05-19T19:35:11Z","lastTimestamp":"2022-05-19T19:38:51Z","count":11,"type":"Warning","eventTime":null,"reportingComponent":"","reportingInstance":"","involvedObject":{"kind":"Pod","namespace":"probes","name":"app-target-6664868868-b84vm","uid":"b13de30b-257d-4d59-a58e-62fbb692dcb5","apiVersion":"v1","resourceVersion":"907650","fieldPath":"spec.containers{app-target}","labels":{"app":"app-target","pod-template-hash":"6664868868"}}}
+```json
+I0611 01:51:43.669409       1 request.go:665] Waited for 1.060802249s due to client-side throttling, not priority and fairness, request: GET:https://10.96.0.1:443/apis/discovery.k8s.io/v1?timeout=32s
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:51:51 +0000 UTC","3_EVENT":"Unhealthy","4_CNT":"2","5_MSG":"Liveness probe failed: HTTP probe failed with statuscode: 500"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:51:56 +0000 UTC","3_EVENT":"Unhealthy","4_CNT":"3","5_MSG":"Liveness probe failed: HTTP probe failed with statuscode: 500"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:51:56 +0000 UTC","3_EVENT":"Killing","4_CNT":"1","5_MSG":"Container app-target failed liveness probe, will be restarted"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:52:26 +0000 UTC","3_EVENT":"Pulled","4_CNT":"2","5_MSG":"Container image \"kubernetes-probes-app-target\" already present on machine"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:52:26 +0000 UTC","3_EVENT":"Created","4_CNT":"2","5_MSG":"Created container app-target"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:52:26 +0000 UTC","3_EVENT":"Started","4_CNT":"2","5_MSG":"Started container app-target"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:52:36 +0000 UTC","3_EVENT":"Unhealthy","4_CNT":"4","5_MSG":"Liveness probe failed: HTTP probe failed with statuscode: 500"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:52:41 +0000 UTC","3_EVENT":"Unhealthy","4_CNT":"5","5_MSG":"Liveness probe failed: HTTP probe failed with statuscode: 500"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:52:46 +0000 UTC","3_EVENT":"Unhealthy","4_CNT":"6","5_MSG":"Liveness probe failed: HTTP probe failed with statuscode: 500"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:52:46 +0000 UTC","3_EVENT":"Killing","4_CNT":"2","5_MSG":"Container app-target failed liveness probe, will be restarted"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:53:16 +0000 UTC","3_EVENT":"Pulled","4_CNT":"3","5_MSG":"Container image \"kubernetes-probes-app-target\" already present on machine"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:53:16 +0000 UTC","3_EVENT":"Created","4_CNT":"3","5_MSG":"Created container app-target"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:53:16 +0000 UTC","3_EVENT":"Started","4_CNT":"3","5_MSG":"Started container app-target"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:53:26 +0000 UTC","3_EVENT":"Unhealthy","4_CNT":"7","5_MSG":"Liveness probe failed: HTTP probe failed with statuscode: 500"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:53:31 +0000 UTC","3_EVENT":"Unhealthy","4_CNT":"8","5_MSG":"Liveness probe failed: HTTP probe failed with statuscode: 500"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:53:36 +0000 UTC","3_EVENT":"Unhealthy","4_CNT":"9","5_MSG":"Liveness probe failed: HTTP probe failed with statuscode: 500"}
+{"1_POD":"app-target-68b8b88575-86gg8","2_AT":"2022-06-11 01:53:36 +0000 UTC","3_EVENT":"Killing","4_CNT":"3","5_MSG":"Container app-target failed liveness probe, will be restarted"}
 ```
+
+原則としてJson形式のイベントデータが1行ずつ出力されます。（イベントログとは無関係な標準出力の行も混在しています。）
+
+## 「kubernetes-event-exporter」の設定内容
+
+設定は[event-exporter/01-config.yaml](../event-exporter/01-config.yaml)で行っています。
+
+`route.routes[0].match`の箇所で、出力対象を`app-target`のPodのみに絞り込んでいます。
+
+`receivers[*].stdout.layout`の箇所で、出力結果をフォーマットしています。
+
+フォーマットの設定が無い場合、各行のJsonイベントデータは下記のような形式になります。
+
+```json
+{
+    "metadata": {
+        "name": "app-target-6664868868-b84vm.16f098a83780846f",
+        "namespace": "probes",
+        "uid": "fae45848-90fc-4606-a1d5-dddd6c36dc0f",
+        "resourceVersion": "910964",
+        "creationTimestamp": "2022-05-19T19:35:11Z"
+    },
+    "reason": "Unhealthy",
+    "message": "Liveness probe failed: HTTP probe failed with statuscode: 500",
+    "source": {
+        "component": "kubelet",
+        "host": "docker-desktop"
+    },
+    "firstTimestamp": "2022-05-19T19:35:11Z",
+    "lastTimestamp": "2022-05-19T19:35:11Z",
+    "count": 1,
+    "type": "Warning",
+    "eventTime": null,
+    "reportingComponent": "",
+    "reportingInstance": "",
+    "involvedObject": {
+        "kind": "Pod",
+        "namespace": "probes",
+        "name": "app-target-6664868868-b84vm",
+        "uid": "b13de30b-257d-4d59-a58e-62fbb692dcb5",
+        "apiVersion": "v1",
+        "resourceVersion": "907650",
+        "fieldPath": "spec.containers{app-target}",
+        "labels": {
+            "app": "app-target",
+            "pod-template-hash": "6664868868"
+        }
+    }
+}
+```
+
+この中で下記の項目のみを出力するように、`receivers[*].stdout.layout`で設定しています。
+
+|カラム名|Jsonキー|データの内容|
+|---|---|---|
+|1_POD|`involvedObject.name`|イベントが発生したPod名|
+|2_AT|`lastTimestamp`|イベント発生時刻|
+|3_EVENT|`reason`|イベント名|
+|4_CNT|`count`|同名イベントの発生回数|
+|5_MSG|`message`|イベントメッセージ|
 
 ## イベントログのクリア
 
-過去のイベントログをクリアするには、ログ取得用Podを再起動します。
+ログ取得用Podを再起動すると、過去のイベントログをクリアできます。
 
 ```bash
 kubectl rollout restart -n monitoring deployment/event-exporter
@@ -169,15 +224,11 @@ app-target-6664868868-ss8ph   1/1     Running   0             42m
 
 ## 課題
 
-この方法を使うに当たり、下記の課題が残っています。
+### イベントログ出力結果の不具合
 
-### 出力項目が多すぎる
+特にイベントログ取得を開始した直後に、ログの取得漏れや出力順序の逆転といった不具合が発生するケースがあります。原因は不明です。
 
-不要な項目が多すぎて、イベントログの確認が煩雑になっています。
-
-出力項目を絞る設定変更について調査中です。
-
-### イベントログ以外も出力されてしまう
+### 無関係な標準出力が混在
 
 - イベントログをログ取得用Podの標準出力に出力する
 - ログ取得用Podの標準出力をファイル出力する
@@ -185,3 +236,4 @@ app-target-6664868868-ss8ph   1/1     Running   0             42m
 という仕組み上、イベントログ以外の標準出力もファイルに含まれてしまいます。
 
 イベントログの出力先を変更すればこの問題は解決しますが、その方法について深追いする予定は今のところありません。（「[kubernetes-event-exporter](https://github.com/opsgenie/kubernetes-event-exporter)」のページにいくつか方法が載っています。）
+

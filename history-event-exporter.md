@@ -3,8 +3,13 @@
 
 ※上の方が新しい履歴です。
 
+- [modified config to filter columns](#modified-config-to-filter-columns)
 - [customized config](#customized-config)
 - [downloaded yaml files](#downloaded-yaml-files)
+
+## modified config to filter columns
+
+- edited 01-config.yaml
 
 ## customized config
 

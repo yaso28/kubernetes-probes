@@ -17,4 +17,10 @@ data:
               receiver: "dump"
     receivers:
       - name: "dump"
-        stdout: {}
+        stdout:
+          layout:
+            1_POD: "{{ .InvolvedObject.Name }}"
+            2_AT: "{{ .LastTimestamp }}"
+            3_EVENT: "{{ .Reason }}"
+            4_CNT: "{{ .Count }}"
+            5_MSG: "{{ .Message }}"
